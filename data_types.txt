@@ -1,0 +1,10 @@
+int
+char
+bool
+double
+float
+enum
+short
+struct
+union
+long
