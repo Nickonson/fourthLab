@@ -29,21 +29,22 @@ struct node
 class SplayTree
 {
     public:  
-    node *RR_ROTATE(node *Node1)
+    node *RR_ROTATE(node * Node1)
     {
         node *Node2 = Node1->lch;
         Node1->lch = Node2->rch;
         Node2->rch = Node1;
         return Node2;       
     }
-    node *LL_ROTATE(node *Node1)
+    node *LL_ROTATE(node * Node1)
     {
         node *Node2 = Node1->rch;
         Node1->rch = Node2->lch;
         Node2->lch = Node1;
         return Node2;
     }
-    node *Splay(int key, node *root)
+    //node *Splay(node *root, char identifier[256])
+    node * Splay(int key, node * root)
     {
         if(!root)
             return NULL;
@@ -56,31 +57,37 @@ class SplayTree
         
         while(1)
         {
-            if(key < root->k)
+            //if(STRCMP(identifier, root->id) < 0)//key < root->k)
+            if (key < root->k)
             {
                 if(!root->lch)
                     break;
-                if(key < root->lch->k)
+                //if(STRCMP(identifier, root->lch->id) < 0)//key < root->lch->k)
+                if (key < root->lch->k)
                 {
                     root = RR_ROTATE(root);
                     if(!root->lch)
                         break;
                 }
-                RightTreeMin = root;
+                RightTreeMin->lch= root;
+                RightTreeMin = RightTreeMin->lch;
                 root = root->lch;
                 RightTreeMin->lch = NULL;
             }
-            else if(key > root->k)
+            //else if(STRCMP(identifier, root->id) > 0)//key > root->k)
+            else if (key > root->k)
             {
                 if(!root->rch)
                     break;
-                if(key > root->rch->k)
+                //if(STRCMP(identifier, root->lch->id) > 0)//key > root->rch->k)
+                if (key > root->rch->k)
                 {
                     root = LL_ROTATE(root);
                     if(!root->rch)
                         break;
                 }
-                LeftTreeMax = root;
+                LeftTreeMax->rch= root;
+                LeftTreeMax = LeftTreeMax->rch;
                 root = root->rch;
                 LeftTreeMax->rch = NULL;
             }
@@ -93,44 +100,51 @@ class SplayTree
         root->rch = header.lch;
         return root;
     }
-    node *New_Node(char identifier[256])
+    //node * New_Node(char identifier[256])
+    node * New_Node(int key)
     {
-        node *p_Node = new node;
-        p_Node->count = 1;
-        strcpy(p_Node->id, identifier);
+        node * p_Node = new node;
+        //p_Node->count = 1;
+        //strcpy(p_Node->id, identifier);
         if(!p_Node)
         {
             printf("\nOut of memory!\n");
             exit(1);
         }
-        p_Node->k = 0;
+        p_Node->k = key;
         p_Node->lch = p_Node->rch = NULL;
         return p_Node;
     }
-    node *Insert(int key, node *root, char identifier[256])
+    //node *Insert(node *root, char identifier[256])
+    node * Insert(int key, node * root)
     {
         static node *p_Node = NULL;
         if(!p_Node)
-            p_Node = New_Node(identifier);
+            p_Node = New_Node(key);
+            //p_Node = New_Node(identifier);
         else
             p_Node->k = key;
         
         if(!root)
         {
             root = p_Node;
-            //k == 0 as default
+            //root->k = 0;
             p_Node = NULL;
             return root;
         }
+        //balancing
+        //root = Splay(root, identifier);
         root = Splay(key, root);
-        if(key < root->k)
+        //if(STRCMP(identifier, root->id) < 0)//key < root->k)
+        if (key < root->k)
         {
             p_Node->lch = root->lch;
             p_Node->rch = root;
             root->lch = NULL;
             root = p_Node;
         }
-        else if(key > root->k)
+        //else if(STRCMP(identifier, root->id) > 0)//key > root->k)
+        else if (key > root->k)
         {
             p_Node->rch = root->rch;
             p_Node->lch = root;
@@ -142,14 +156,17 @@ class SplayTree
         p_Node = NULL;
         return root;
     }
-    node *Delete(int key, node *root)
+    //node *Delete(node *root, char identifier[256])
+    node * Delete(int key, node * root)
     {
         node *temp;
         if(!root)
             return NULL;
         
+        //root = Splay(root, identifier);
         root = Splay(key, root);
-        if(key != root->k) // tree is only one node
+        //if(STRCMP(identifier, root->id) != 0) // tree is only one node
+        if (key != root->k)//if tree has one item
             return root;
         else
         {
@@ -161,6 +178,7 @@ class SplayTree
             else
             {
                 temp = root;
+                //root = Splay(root->lch, identifier);
                 root = Splay(key, root->lch);
                 root->rch = temp->rch;
             }
@@ -168,8 +186,10 @@ class SplayTree
             return root;
         }
     }
-    node *Search(int key, node *root)
+    //node *Search(node *root, char identifier[256])
+    node * Search(int key, node * root)//seraching
     {
+        //return Splay(root, identifier);
         return Splay(key, root);
     }
     void InOrder(node *root)
@@ -189,7 +209,9 @@ class SplayTree
     }
 };
 
-void workWithTree();
+void nodesFromFile(SplayTree *st, node *root, char *rFlName);
+
+void workWithTree(SplayTree *st, node *root);
 
 void addNewElem(char *varName);
 
@@ -197,34 +219,46 @@ bool ifServWord(char *word);
 
 bool ifType(char *word);
 
-void clearFile(char *newFlName, FILE *file_with_comments);
+void clearFile(char *fl_with_coms, char *newFlName);
 
 int STRCMP(const char *s1, const char *s2);
 
 void warning256()
 {
-    printf("fock out of 256 chars");
+    printf("out of 256 chars");
 }
+
+
 
 int main()
 {
-    SplayTree sp;
-    node *root;
+    
+    SplayTree * st = new SplayTree;
+    node * root;
     root = NULL;
+    
+    char inpFl[] = "splay/input.cpp";
+    char newFl[] = "splay/input_without_comments.cpp";
+    clearFile(inpFl, newFl);
+    
+    nodesFromFile(st,root, newFl);
 
-    char newName[] = "splay/input_without_comments.cpp";
-    FILE *rFl = fopen("splay/input.cpp", "r");
-    clearFile(newName, rFl);
-    fclose(rFl);
+    workWithTree(st, root);
+    delete(root);
+    delete(st);
+    return 0;
+}
 
-    rFl = fopen(newName, "r");
-
+void nodesFromFile(SplayTree *st, node *root, char *rFlName)
+{
+    FILE *rFl = fopen(rFlName, "r");
     char prev, last;
-    last = getc(rFl);
-
-    char tWord[256] = "\0";
     bool ifQuotes = false;
     enum REGIMES regime = NONE;
+    char tWord[256] = "\0";
+
+    last = getc(rFl);
+    
     while (!feof(rFl))
     {
         if(last == '"'){
@@ -368,9 +402,10 @@ int main()
             else
                 regime = CALL;
 
+            
             if(regime != NONE)
             {
-                sp.Insert(, root, tWord);
+//                (*st).Insert();
             }
             
         }
@@ -380,24 +415,17 @@ int main()
 	
 
     fclose(rFl);
-    
-    return 0;
+    return;
 }
 
-void workWithTree()
+void workWithTree(SplayTree *st, node *root)
 {
-    SplayTree st;
-    node *root;
     root = NULL;
-    st.InOrder(root);
-    int i, c;
-    char identifier[256];
-    scanf("%s", identifier);
-    printf("%s\n", identifier);
-    scanf("%s", identifier);
-    printf("%s\n", identifier);
+    (*st).InOrder(root);
+    int i, c = 5;
+    //char identifier[256];
     
-    while(1)
+    while(c != 4)
     {
         cout << "1. Insert" << endl;
         cout << "2. Delete" << endl;
@@ -410,32 +438,36 @@ void workWithTree()
         case 1:
             cout << "Enter value to be inserted: ";
             cin >> i;
-            scanf("%s", identifier);
-            root = st.Insert(i, root, identifier);
+            //scanf("%s", identifier);
+            //root = st.Insert(root, identifier);
+            root = (*st).Insert(i, root);
             cout << "\nAfter Insert: " << i << endl;
-            st.InOrder(root);
+            (*st).InOrder(root);
             break;
         case 2:
             cout << "Enter value to be deleted: ";
             cin >> i;
-            root = st.Delete(i, root);
+            //root = st.Delete(root, identifier);
+            root = (*st).Delete(i, root);
             cout << "\nAfter Delete: " << i << endl;
-            st.InOrder(root);
+            (*st).InOrder(root);
             break;
         case 3:
             cout << "Enter value to be searched: ";
             cin >> i;
-            root = st.Search(i, root);
+            //root = (*st).Search(root, identifier);
+            root = (*st).Search(i, root);
             cout << "\nAfter Search " << i << endl;
-            st.InOrder(root);
+            (*st).InOrder(root);
             break;
         case 4:
-            exit(1);
+            break;
         default:
             cout << "\nInvalid type!\n";
         }
     }
-    
+    cout<<"\n";
+    return;
 }
 
 void addNewElem(char *varName)
@@ -478,17 +510,18 @@ bool ifType(char *word)
     return output;
 }
 
-void clearFile(char *newFlName, FILE *file_with_comments)
+void clearFile(char *flWithComs, char *newFlName)
 {
     char prev, last;
 
+    FILE *fl_with_coms = fopen(flWithComs, "r");
     FILE *new_file = fopen(newFlName, "w");
 
-    last = getc(file_with_comments);
-    while (!feof(file_with_comments))
+    last = getc(fl_with_coms);
+    while (!feof(fl_with_coms))
     {
         prev = last;
-        last = getc(file_with_comments);
+        last = getc(fl_with_coms);
         if (prev == '\"')
         {
             fputc(prev, new_file);
@@ -497,12 +530,12 @@ void clearFile(char *newFlName, FILE *file_with_comments)
                 if (last == '\\')
                 {
                     fputc(last, new_file);
-                    last = getc(file_with_comments);
+                    last = getc(fl_with_coms);
                     fputc(last, new_file);
-                    last = getc(file_with_comments);
+                    last = getc(fl_with_coms);
                 }
                 prev = last;
-                last = getc(file_with_comments);
+                last = getc(fl_with_coms);
                 fputc(prev, new_file);
 
             } while (prev != '\"');
@@ -515,12 +548,12 @@ void clearFile(char *newFlName, FILE *file_with_comments)
                 if (last == '\\')
                 {
                     fputc(last, new_file);
-                    last = getc(file_with_comments);
+                    last = getc(fl_with_coms);
                     fputc(last, new_file);
-                    last = getc(file_with_comments);
+                    last = getc(fl_with_coms);
                 }
                 prev = last;
-                last = getc(file_with_comments);
+                last = getc(fl_with_coms);
                 fputc(prev, new_file);
 
             } while (prev != '\'');
@@ -529,33 +562,35 @@ void clearFile(char *newFlName, FILE *file_with_comments)
         {
             if (last == '/')
             {
-                while (prev != '\n' && !feof(file_with_comments))
+                while (prev != '\n' && !feof(fl_with_coms))
                 {
                     prev = last;
-                    last = getc(file_with_comments);
+                    last = getc(fl_with_coms);
                     if (last == '\n')
                     {
                         
                         if (prev == '\\')
                         {
-                            prev = getc(file_with_comments);
-                            last = getc(file_with_comments);
+                            prev = getc(fl_with_coms);
+                            last = getc(fl_with_coms);
                         }
-                        fputc('\n', new_file);
+                        fputc(' ', new_file);
+                        
+                        //fputc('\n', new_file);
                     }
                 }
             }
             else if (last == '*')
             {
-                prev = getc(file_with_comments);
-                last = getc(file_with_comments);
+                prev = getc(fl_with_coms);
+                last = getc(fl_with_coms);
 
-                while (!(prev == '*' && last == '/') && !feof(file_with_comments))
+                while (!(prev == '*' && last == '/') && !feof(fl_with_coms))
                 {
                     prev = last;
-                    last = getc(file_with_comments);
+                    last = getc(fl_with_coms);
                 }
-                last = getc(file_with_comments);
+                last = getc(fl_with_coms);
             }
             else
                 fputc(prev, new_file);
@@ -563,8 +598,9 @@ void clearFile(char *newFlName, FILE *file_with_comments)
         else
             fputc(prev, new_file);
     }
-    fclose(file_with_comments);
+    fclose(fl_with_coms);
     fclose(new_file);
+    return;
 }
 
 int STRCMP(const char *s1, const char *s2)
@@ -573,10 +609,9 @@ int STRCMP(const char *s1, const char *s2)
     while(s1[i] != '\0' && s2[i] != '\0' && s1[i] == s2[i])
         i++;
     
-    if(s1[i] != '\0' || s2[i] != '\0')
+    if(s1[i] == '\0' && s2[i] == '\0')
         return 0;
     else if(s1[i] > s2[i])
         return 1;
-    else 
-        return -1;
+    return -1;
 }
