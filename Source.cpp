@@ -12,7 +12,6 @@ using namespace std;
             >? adding identifier such as: $vars, goto id, $funcs id
             > mechanic of working with nodes key
 
-
 */
 
 enum REGIMES{NONE = 0, DECLARING, ATTRIBUTE, CALL};
@@ -25,6 +24,8 @@ struct node
     node *lch;
     node *rch;
 };
+
+int STRCMP(const char *s1, const char *s2);
 
 class SplayTree
 {
@@ -43,8 +44,7 @@ class SplayTree
         Node2->lch = Node1;
         return Node2;
     }
-    //node *Splay(node *root, char identifier[256])
-    node * Splay(int key, node * root)
+    node *Splay(char id[256], node *root)
     {
         if(!root)
             return NULL;
@@ -57,13 +57,11 @@ class SplayTree
         
         while(1)
         {
-            //if(STRCMP(identifier, root->id) < 0)//key < root->k)
-            if (key < root->k)
+            if(STRCMP(id, root->id) < 0)            //key < root->k)
             {
                 if(!root->lch)
                     break;
-                //if(STRCMP(identifier, root->lch->id) < 0)//key < root->lch->k)
-                if (key < root->lch->k)
+                if(STRCMP(id, root->lch->id) < 0)   //key < root->lch->k)
                 {
                     root = RR_ROTATE(root);
                     if(!root->lch)
@@ -74,13 +72,11 @@ class SplayTree
                 root = root->lch;
                 RightTreeMin->lch = NULL;
             }
-            //else if(STRCMP(identifier, root->id) > 0)//key > root->k)
-            else if (key > root->k)
+            else if(STRCMP(id, root->id) > 0)       //key > root->k
             {
                 if(!root->rch)
                     break;
-                //if(STRCMP(identifier, root->lch->id) > 0)//key > root->rch->k)
-                if (key > root->rch->k)
+                if(STRCMP(id, root->lch->id) > 0)   //key > root->rch->k)
                 {
                     root = LL_ROTATE(root);
                     if(!root->rch)
@@ -100,31 +96,30 @@ class SplayTree
         root->rch = header.lch;
         return root;
     }
-    //node * New_Node(char identifier[256])
-    node * New_Node(int key)
+    node *New_Node(char id[256])
     {
         node * p_Node = new node;
-        //p_Node->count = 1;
-        //strcpy(p_Node->id, identifier);
+        p_Node->count = 1;
+        strcpy(p_Node->id, id);
         if(!p_Node)
         {
             printf("\nOut of memory!\n");
             exit(1);
         }
-        p_Node->k = key;
-        p_Node->lch = p_Node->rch = NULL;
+        p_Node->lch = p_Node->rch = NULL;       //p_Node->k = key;
         return p_Node;
     }
-    //node *Insert(node *root, char identifier[256])
-    node * Insert(int key, node * root)
+    node *Insert(char id[256], node *root)
     {
         static node *p_Node = NULL;
         if(!p_Node)
-            p_Node = New_Node(key);
-            //p_Node = New_Node(identifier);
+            p_Node = New_Node(id);
         else
-            p_Node->k = key;
-        
+        {
+            p_Node->count = 1;
+            strcpy(p_Node->id, id);
+            //p_Node->k = key;
+        }
         if(!root)
         {
             root = p_Node;
@@ -133,18 +128,16 @@ class SplayTree
             return root;
         }
         //balancing
-        //root = Splay(root, identifier);
-        root = Splay(key, root);
-        //if(STRCMP(identifier, root->id) < 0)//key < root->k)
-        if (key < root->k)
+        root = Splay(id, root);
+ 
+        if(STRCMP(id, root->id) < 0)        //key < root->k)
         {
             p_Node->lch = root->lch;
             p_Node->rch = root;
             root->lch = NULL;
             root = p_Node;
         }
-        //else if(STRCMP(identifier, root->id) > 0)//key > root->k)
-        else if (key > root->k)
+        else if(STRCMP(id, root->id) > 0)   //key > root->k)
         {
             p_Node->rch = root->rch;
             p_Node->lch = root;
@@ -152,21 +145,21 @@ class SplayTree
             root = p_Node;
         }
         else
+        {
+            root->count++;
             return root;
+        }
         p_Node = NULL;
         return root;
     }
-    //node *Delete(node *root, char identifier[256])
-    node * Delete(int key, node * root)
+    node *Delete(char id[256], node *root)
     {
         node *temp;
         if(!root)
             return NULL;
         
-        //root = Splay(root, identifier);
-        root = Splay(key, root);
-        //if(STRCMP(identifier, root->id) != 0) // tree is only one node
-        if (key != root->k)//if tree has one item
+        root = Splay(id, root);
+        if(STRCMP(id, root->id) != 0)           // tree is only one node
             return root;
         else
         {
@@ -178,19 +171,16 @@ class SplayTree
             else
             {
                 temp = root;
-                //root = Splay(root->lch, identifier);
-                root = Splay(key, root->lch);
+                root = Splay(id, root->lch);
                 root->rch = temp->rch;
             }
             free(temp);
             return root;
         }
     }
-    //node *Search(node *root, char identifier[256])
-    node * Search(int key, node * root)//seraching
+    node *Search(char id[256], node *root)
     {
-        //return Splay(root, identifier);
-        return Splay(key, root);
+        return Splay(id, root);
     }
     void InOrder(node *root)
     {
@@ -200,12 +190,13 @@ class SplayTree
             cout << "key : " << root->k;
 
             if(root->lch)
-                cout << " | left child: " << root->lch->k;
+                cout << " | left child: " << root->lch->id << " ( " << root->lch->count << " ) - quantity";
             if(root->rch)
-                cout << " | right child: " << root->rch->k;
+                cout << " | right child: " << root->rch->id << " ( " << root->lch->count << " ) - quantity";
             cout << "\n";
             InOrder(root->rch);
         }
+        return;
     }
 };
 
@@ -221,7 +212,6 @@ bool ifType(char *word);
 
 void clearFile(char *fl_with_coms, char *newFlName);
 
-int STRCMP(const char *s1, const char *s2);
 
 void warning256()
 {
@@ -247,6 +237,19 @@ int main()
     delete(root);
     delete(st);
     return 0;
+}
+
+int STRCMP(const char *s1, const char *s2)
+{
+    int i = 0;
+    while(s1[i] != '\0' && s2[i] != '\0' && s1[i] == s2[i])
+        i++;
+    
+    if(s1[i] == '\0' && s2[i] == '\0')
+        return 0;
+    else if(s1[i] > s2[i])
+        return 1;
+    return -1;
 }
 
 void nodesFromFile(SplayTree *st, node *root, char *rFlName)
@@ -423,7 +426,7 @@ void workWithTree(SplayTree *st, node *root)
     root = NULL;
     (*st).InOrder(root);
     int i, c = 5;
-    //char identifier[256];
+    char id[256];
     
     while(c != 4)
     {
@@ -440,7 +443,7 @@ void workWithTree(SplayTree *st, node *root)
             cin >> i;
             //scanf("%s", identifier);
             //root = st.Insert(root, identifier);
-            root = (*st).Insert(i, root);
+            root = (*st).Insert(id, root);
             cout << "\nAfter Insert: " << i << endl;
             (*st).InOrder(root);
             break;
@@ -448,7 +451,7 @@ void workWithTree(SplayTree *st, node *root)
             cout << "Enter value to be deleted: ";
             cin >> i;
             //root = st.Delete(root, identifier);
-            root = (*st).Delete(i, root);
+            root = (*st).Delete(id, root);
             cout << "\nAfter Delete: " << i << endl;
             (*st).InOrder(root);
             break;
@@ -456,7 +459,7 @@ void workWithTree(SplayTree *st, node *root)
             cout << "Enter value to be searched: ";
             cin >> i;
             //root = (*st).Search(root, identifier);
-            root = (*st).Search(i, root);
+            root = (*st).Search(id, root);
             cout << "\nAfter Search " << i << endl;
             (*st).InOrder(root);
             break;
@@ -601,17 +604,4 @@ void clearFile(char *flWithComs, char *newFlName)
     fclose(fl_with_coms);
     fclose(new_file);
     return;
-}
-
-int STRCMP(const char *s1, const char *s2)
-{
-    int i = 0;
-    while(s1[i] != '\0' && s2[i] != '\0' && s1[i] == s2[i])
-        i++;
-    
-    if(s1[i] == '\0' && s2[i] == '\0')
-        return 0;
-    else if(s1[i] > s2[i])
-        return 1;
-    return -1;
 }
