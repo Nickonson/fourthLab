@@ -10,7 +10,6 @@ using namespace std;
     TO do
             > ins, del, ex menu doesnt work fully cuz of IDENTIFIER (right menu)
             >? adding identifier such as: $vars, goto id, $funcs id
-            > mechanic of working with nodes key
 
 */
 
@@ -57,11 +56,11 @@ class SplayTree
         
         while(1)
         {
-            if(STRCMP(id, root->id) < 0)            //key < root->k)
+            if(STRCMP(id, root->id) < 0)
             {
                 if(!root->lch)
                     break;
-                if(STRCMP(id, root->lch->id) < 0)   //key < root->lch->k)
+                if(STRCMP(id, root->lch->id) < 0)
                 {
                     root = RR_ROTATE(root);
                     if(!root->lch)
@@ -76,7 +75,7 @@ class SplayTree
             {
                 if(!root->rch)
                     break;
-                if(STRCMP(id, root->lch->id) > 0)   //key > root->rch->k)
+                if(STRCMP(id, root->rch->id) > 0)   //key > root->rch->k)
                 {
                     root = LL_ROTATE(root);
                     if(!root->rch)
@@ -118,12 +117,10 @@ class SplayTree
         {
             p_Node->count = 1;
             strcpy(p_Node->id, id);
-            //p_Node->k = key;
         }
         if(!root)
         {
             root = p_Node;
-            //root->k = 0;
             p_Node = NULL;
             return root;
         }
@@ -187,12 +184,12 @@ class SplayTree
         if(root)
         {
             InOrder(root->lch);
-            cout << "key : " << root->k;
+            cout << "id : " << root->id << " ( " << root->count << " ) - quant ";
 
             if(root->lch)
-                cout << " | left child: " << root->lch->id << " ( " << root->lch->count << " ) - quantity";
+                cout << " | left child: " << root->lch->id << " ( " << root->lch->count << " ) - quant";
             if(root->rch)
-                cout << " | right child: " << root->rch->id << " ( " << root->lch->count << " ) - quantity";
+                cout << " | right child: " << root->rch->id << " ( " << root->rch->count << " ) - quant";
             cout << "\n";
             InOrder(root->rch);
         }
@@ -204,34 +201,28 @@ void nodesFromFile(SplayTree *st, node *root, char *rFlName);
 
 void workWithTree(SplayTree *st, node *root);
 
-void addNewElem(char *varName);
-
 bool ifServWord(char *word);
 
 bool ifType(char *word);
 
 void clearFile(char *fl_with_coms, char *newFlName);
 
-
 void warning256()
 {
     printf("out of 256 chars");
 }
 
-
-
 int main()
 {
-    
+    printf("_____________________________________________________________________________________________\n");
     SplayTree * st = new SplayTree;
-    node * root;
+    node * root = new node;
     root = NULL;
-    
     char inpFl[] = "splay/input.cpp";
     char newFl[] = "splay/input_without_comments.cpp";
     clearFile(inpFl, newFl);
     
-    nodesFromFile(st,root, newFl);
+    nodesFromFile(st, root, newFl);
 
     workWithTree(st, root);
     delete(root);
@@ -247,9 +238,9 @@ int STRCMP(const char *s1, const char *s2)
     
     if(s1[i] == '\0' && s2[i] == '\0')
         return 0;
-    else if(s1[i] > s2[i])
-        return 1;
-    return -1;
+    else if(s1[i] == '\0' || s2[i] == '\0' || s1[i] < s2[i])
+        return -1;
+    return 1;
 }
 
 void nodesFromFile(SplayTree *st, node *root, char *rFlName)
@@ -257,165 +248,48 @@ void nodesFromFile(SplayTree *st, node *root, char *rFlName)
     FILE *rFl = fopen(rFlName, "r");
     char prev, last;
     bool ifQuotes = false;
-    enum REGIMES regime = NONE;
     char tWord[256] = "\0";
-
+    int i = 0;
     last = getc(rFl);
-    
     while (!feof(rFl))
     {
-        if(last == '"'){
-            last = getc(rFl);
-            while(last != '"')
-                last = getc(rFl);
-            last = getc(rFl);
-        }
-        else if(last == '\''){
-            last = getc(rFl);
-            while(last != '\'')
-                last = getc(rFl);
-            last = getc(rFl);
-        }
-        else if(!ifQuotes && (last >= 'a' && last <= 'z' && last >= 'A' && last <= 'Z' || last == '_'))
+        if(last == '\"' || last == '\'')
+            ifQuotes = !ifQuotes;
+        if(!ifQuotes)
         {
-            tWord[0] = '\0';
-            int t = 0;
-            while(t < 256 && !feof(rFl) && (
-                last >= 'a' && last <= 'z' && 
-                last >= 'A' && last <= 'Z' &&
-                last >= '0' && last <= '9' || last == '_'))
+            if(last >= 'a' && last <= 'z' || 
+                last >= 'A' && last <= 'Z' || last == '_')
             {
-                tWord[t] = last;
-                t++;
-                last = getc(rFl);
-            }
-            tWord[t] = '\0';
-
-            if(ifType(tWord))
-                if(!STRCMP(tWord, "enum") || !STRCMP(tWord, "union") || !STRCMP(tWord, "struct"))
+                i = 0;
+                while(!feof(rFl) && (last >= 'a' && last <= 'z' || 
+                    last >= 'A' && last <= 'Z' || last == '_' 
+                    || last >= '0' && last <= '9'))
                 {
-                    regime = ATTRIBUTE;
+                    tWord[i] = last;
+                    i++;
+                    prev = last;
                     last = getc(rFl);
-                    while(last == ' ')
-                        last = getc(rFl);
-                    last = getc(rFl);
-                    if(last == '_')
+                }
+                tWord[i] = '\0';
+                if(STRCMP(tWord, "include") == 0)
+                {
+                    while(!feof(rFl) && last != '\n')
                     {
-                        t = 0;
                         prev = last;
-                        while(!feof(rFl) && (last != ' ' || prev != ')'))
-                        {
-                            tWord[t] = last;
-                            prev = last;
-                            last = getc(rFl);
-                            t++;
-                        }
-                        tWord[t] = '\0';
-                        if(STRCMP(tWord, "__attribute__(") == 0 && last == ' ')
-                        {
-                            last = getc(rFl);
-                            while(last != '{')
-                            {
-                                tWord[t] = last;
-                                last = getc(rFl);
-                                t++;
-                            }
-                            tWord[t] = '\0';
-                        }
+                        last = getc(rFl);
                     }
-                    else
-                    {
-                        t = 0;
-                        if(last == ' ')
-                            while(last == ' ')
-                                last = getc(rFl);
-                        while(t < 256 && last != '{')
-                        {
-                            tWord[t] = last;
-                            last = getc(rFl);
-                            t++;
-                        }
-                        if(t > 255)warning256();
-                        tWord[t] = '\0';
-                    }
-                    //tword - new declared name
                 }
-                else
+                else if(!ifServWord(tWord))
                 {
-                    regime = DECLARING;
-                    if(!STRCMP(tWord, "long") || !STRCMP(tWord, "short"))
-                    {
-                        while(!feof(rFl) && !(
-                            last >= 'a' && last <= 'z' && 
-                            last >= 'A' && last <= 'Z' ||
-                            last == '_'))
-                        {
-                            last = getc(rFl);
-                        }
-                        t = 0;
-                        while(t < 256 && !feof(rFl) && (
-                            last >= 'a' && last <= 'z' && 
-                            last >= 'A' && last <= 'Z' &&
-                            last >= '0' && last <= '9' || last == '_'))
-                        {
-                            tWord[t] = last;
-                            last = getc(rFl);
-                            t++;
-                        }
-                        tWord[t] = '\0';
-                        if(!STRCMP(tWord, "long ") || !STRCMP(tWord, "short "))
-                        {
-                            last = getc(rFl);
-                            t = 0;
-                            while(t < 256 && !feof(rFl) && (
-                                last >= 'a' && last <= 'z' && 
-                                last >= 'A' && last <= 'Z' &&
-                                last >= '0' && last <= '9' || last == '_'))
-                            {
-                                tWord[t] = last;
-                                last = getc(rFl);
-                                t++;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        while(!feof(rFl) && !(
-                            last >= 'a' && last <= 'z' && 
-                            last >= 'A' && last <= 'Z' ||
-                            last == '_'))
-                        {
-                            last = getc(rFl);
-                        }
-                        t = 0;
-                        while(t < 256 && !feof(rFl) && (
-                            last >= 'a' && last <= 'z' && 
-                            last >= 'A' && last <= 'Z' ||
-                            last == '_'))
-                        {
-                            tWord[t] = last;
-                            last = getc(rFl);
-                            t++;
-                        }
-                        tWord[t] = '\0';
-                    }
+                    root = (*st).Insert(tWord, root);
+                    cout << "\nAfter Insert: " << tWord << endl;
+                    (*st).InOrder(root);
                 }
-            else if(ifServWord(tWord))
-                regime = NONE;
-            else
-                regime = CALL;
-
-            
-            if(regime != NONE)
-            {
-//                (*st).Insert();
             }
-            
         }
-        else
-            last = getc(rFl);
+        prev = last;
+        last = getc(rFl);    
     }
-	
 
     fclose(rFl);
     return;
@@ -423,14 +297,14 @@ void nodesFromFile(SplayTree *st, node *root, char *rFlName)
 
 void workWithTree(SplayTree *st, node *root)
 {
-    root = NULL;
+    printf("_____________________________________________________________________________________________\n");
     (*st).InOrder(root);
-    int i, c = 5;
+    int c = 5;
     char id[256];
     
     while(c != 4)
     {
-        cout << "1. Insert" << endl;
+        //cout << "1. Insert" << endl;
         cout << "2. Delete" << endl;
         cout << "3. Search" << endl;
         cout << "4. Exit" << endl;
@@ -438,29 +312,27 @@ void workWithTree(SplayTree *st, node *root)
         cin >> c;
         switch (c)
         {
+        /*
         case 1:
             cout << "Enter value to be inserted: ";
-            cin >> i;
-            //scanf("%s", identifier);
-            //root = st.Insert(root, identifier);
+            scanf("%s", id);
             root = (*st).Insert(id, root);
-            cout << "\nAfter Insert: " << i << endl;
+            cout << "\nAfter Insert: " << id << endl;
             (*st).InOrder(root);
             break;
+        */
         case 2:
             cout << "Enter value to be deleted: ";
-            cin >> i;
-            //root = st.Delete(root, identifier);
+            scanf("%s", id);
             root = (*st).Delete(id, root);
-            cout << "\nAfter Delete: " << i << endl;
+            cout << "\nAfter Delete: " << id << endl;
             (*st).InOrder(root);
             break;
         case 3:
             cout << "Enter value to be searched: ";
-            cin >> i;
-            //root = (*st).Search(root, identifier);
+            scanf("%s", id);
             root = (*st).Search(id, root);
-            cout << "\nAfter Search " << i << endl;
+            cout << "\nAfter Search " << id << endl;
             (*st).InOrder(root);
             break;
         case 4:
@@ -473,23 +345,18 @@ void workWithTree(SplayTree *st, node *root)
     return;
 }
 
-void addNewElem(char *varName)
-{
-
-}
-
 bool ifServWord(char *word)
 {
     bool output = false;
     char tempWord[256];
 
     FILE *srvFl = fopen("splay/service_words.txt", "r");
-
+    fseek(srvFl, 0, SEEK_SET);
     while(!feof(srvFl) && !output)
     {
         fscanf(srvFl, "%s", tempWord);
-        if(strcmp(word, tempWord) == 0)
-            output = true;
+        if(STRCMP(word, tempWord) == 0)
+            output = true;            
     }
 
     fclose(srvFl);
