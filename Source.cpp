@@ -4,16 +4,10 @@
 
 using namespace std;
 
-
 /*
-
     TO do
-            > ins, del, ex menu doesnt work fully cuz of IDENTIFIER (right menu)
-            >? adding identifier such as: $vars, goto id, $funcs id
-
+        > adding : goto id
 */
-
-enum REGIMES{NONE = 0, DECLARING, ATTRIBUTE, CALL};
 
 struct node
 {
@@ -23,8 +17,6 @@ struct node
     node *lch;
     node *rch;
 };
-
-int STRCMP(const char *s1, const char *s2);
 
 class SplayTree
 {
@@ -56,11 +48,11 @@ class SplayTree
         
         while(1)
         {
-            if(STRCMP(id, root->id) < 0)
+            if(strcmp(id, root->id) < 0)
             {
                 if(!root->lch)
                     break;
-                if(STRCMP(id, root->lch->id) < 0)
+                if(strcmp(id, root->lch->id) < 0)
                 {
                     root = RR_ROTATE(root);
                     if(!root->lch)
@@ -71,11 +63,11 @@ class SplayTree
                 root = root->lch;
                 RightTreeMin->lch = NULL;
             }
-            else if(STRCMP(id, root->id) > 0)       //key > root->k
+            else if(strcmp(id, root->id) > 0)       //key > root->k
             {
                 if(!root->rch)
                     break;
-                if(STRCMP(id, root->rch->id) > 0)   //key > root->rch->k)
+                if(strcmp(id, root->rch->id) > 0)   //key > root->rch->k)
                 {
                     root = LL_ROTATE(root);
                     if(!root->rch)
@@ -105,7 +97,7 @@ class SplayTree
             printf("\nOut of memory!\n");
             exit(1);
         }
-        p_Node->lch = p_Node->rch = NULL;       //p_Node->k = key;
+        p_Node->lch = p_Node->rch = NULL;
         return p_Node;
     }
     node *Insert(char id[256], node *root)
@@ -127,14 +119,14 @@ class SplayTree
         //balancing
         root = Splay(id, root);
  
-        if(STRCMP(id, root->id) < 0)        //key < root->k)
+        if(strcmp(id, root->id) < 0)        //key < root->k)
         {
             p_Node->lch = root->lch;
             p_Node->rch = root;
             root->lch = NULL;
             root = p_Node;
         }
-        else if(STRCMP(id, root->id) > 0)   //key > root->k)
+        else if(strcmp(id, root->id) > 0)   //key > root->k)
         {
             p_Node->rch = root->rch;
             p_Node->lch = root;
@@ -156,7 +148,7 @@ class SplayTree
             return NULL;
         
         root = Splay(id, root);
-        if(STRCMP(id, root->id) != 0)           // tree is only one node
+        if(strcmp(id, root->id) != 0)           // tree is only one node
             return root;
         else
         {
@@ -183,34 +175,27 @@ class SplayTree
     {
         if(root)
         {
-            InOrder(root->lch);
-            cout << "id : " << root->id << " ( " << root->count << " ) - quant ";
+            cout << "id : " << root->id << " ( " << root->count << " ) ";
 
             if(root->lch)
-                cout << " | left child: " << root->lch->id << " ( " << root->lch->count << " ) - quant";
+                cout << " | left child: " << root->lch->id << " ( " << root->lch->count << " ) ";
             if(root->rch)
-                cout << " | right child: " << root->rch->id << " ( " << root->rch->count << " ) - quant";
+                cout << " | right child: " << root->rch->id << " ( " << root->rch->count << " ) ";
             cout << "\n";
+            InOrder(root->lch);
             InOrder(root->rch);
         }
         return;
     }
 };
 
-void nodesFromFile(SplayTree *st, node *root, char *rFlName);
+void nodesFromFile(SplayTree *st, node **p_root, char *rFlName);
 
-void workWithTree(SplayTree *st, node *root);
+void workWithTree(SplayTree *st, node **p_root);
 
 bool ifServWord(char *word);
 
-bool ifType(char *word);
-
 void clearFile(char *fl_with_coms, char *newFlName);
-
-void warning256()
-{
-    printf("out of 256 chars");
-}
 
 int main()
 {
@@ -220,31 +205,19 @@ int main()
     root = NULL;
     char inpFl[] = "splay/input.cpp";
     char newFl[] = "splay/input_without_comments.cpp";
-    clearFile(inpFl, newFl);
     
-    nodesFromFile(st, root, newFl);
+    clearFile(inpFl, newFl);
+    nodesFromFile(st, &root, newFl);
+    workWithTree(st, &root);
 
-    workWithTree(st, root);
     delete(root);
     delete(st);
     return 0;
 }
 
-int STRCMP(const char *s1, const char *s2)
+void nodesFromFile(SplayTree *st, node **p_root, char *rFlName)
 {
-    int i = 0;
-    while(s1[i] != '\0' && s2[i] != '\0' && s1[i] == s2[i])
-        i++;
-    
-    if(s1[i] == '\0' && s2[i] == '\0')
-        return 0;
-    else if(s1[i] == '\0' || s2[i] == '\0' || s1[i] < s2[i])
-        return -1;
-    return 1;
-}
-
-void nodesFromFile(SplayTree *st, node *root, char *rFlName)
-{
+    node * root = *p_root;
     FILE *rFl = fopen(rFlName, "r");
     char prev, last;
     bool ifQuotes = false;
@@ -271,10 +244,20 @@ void nodesFromFile(SplayTree *st, node *root, char *rFlName)
                     last = getc(rFl);
                 }
                 tWord[i] = '\0';
-                if(STRCMP(tWord, "include") == 0)
+                if(strcmp(tWord, "include") == 0)
                 {
                     while(!feof(rFl) && last != '\n')
                     {
+                        prev = last;
+                        last = getc(rFl);
+                    }
+                }else if(strcmp(tWord, "enum") == 0)
+                {
+                    int cnt = 0;
+                    while(!feof(rFl) && cnt < 2)
+                    {
+                        if(last == ')')
+                            cnt++;
                         prev = last;
                         last = getc(rFl);
                     }
@@ -290,24 +273,25 @@ void nodesFromFile(SplayTree *st, node *root, char *rFlName)
         prev = last;
         last = getc(rFl);    
     }
-
+    *p_root = root;
     fclose(rFl);
     return;
 }
 
-void workWithTree(SplayTree *st, node *root)
+void workWithTree(SplayTree *st, node **p_root)
 {
+    node * root = *p_root;
     printf("_____________________________________________________________________________________________\n");
     (*st).InOrder(root);
     int c = 5;
     char id[256];
     
-    while(c != 4)
+    while(c != 3)
     {
         //cout << "1. Insert" << endl;
-        cout << "2. Delete" << endl;
-        cout << "3. Search" << endl;
-        cout << "4. Exit" << endl;
+        cout << "1. Delete" << endl;
+        cout << "2. Search" << endl;
+        cout << "3. Exit" << endl;
         cout << "Enter your choice: ";
         cin >> c;
         switch (c)
@@ -321,21 +305,21 @@ void workWithTree(SplayTree *st, node *root)
             (*st).InOrder(root);
             break;
         */
-        case 2:
+        case 1:
             cout << "Enter value to be deleted: ";
             scanf("%s", id);
             root = (*st).Delete(id, root);
             cout << "\nAfter Delete: " << id << endl;
             (*st).InOrder(root);
             break;
-        case 3:
+        case 2:
             cout << "Enter value to be searched: ";
             scanf("%s", id);
             root = (*st).Search(id, root);
             cout << "\nAfter Search " << id << endl;
             (*st).InOrder(root);
             break;
-        case 4:
+        case 3:
             break;
         default:
             cout << "\nInvalid type!\n";
@@ -349,34 +333,15 @@ bool ifServWord(char *word)
 {
     bool output = false;
     char tempWord[256];
-
     FILE *srvFl = fopen("splay/service_words.txt", "r");
     fseek(srvFl, 0, SEEK_SET);
     while(!feof(srvFl) && !output)
     {
         fscanf(srvFl, "%s", tempWord);
-        if(STRCMP(word, tempWord) == 0)
+        if(strcmp(word, tempWord) == 0)
             output = true;            
     }
-
     fclose(srvFl);
-    return output;
-}
-
-bool ifType(char *word)
-{
-    bool output = false;
-    char tempWord[256];
-    FILE *tpFl = fopen("splay/data_types.txt", "r");
-
-    while(!feof(tpFl) && !output)
-    {
-        fscanf(tpFl, "%s", tempWord);
-        if(strcmp(word, tempWord) == 0)
-            output = true;
-    }
-
-    fclose(tpFl);
     return output;
 }
 
