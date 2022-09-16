@@ -4,14 +4,8 @@
 
 using namespace std;
 
-/*
-    TO do
-        > adding : goto id
-*/
-
 struct node
 {
-    int k;
     char id[256];
     int count;
     node *lch;
@@ -20,7 +14,12 @@ struct node
 
 class SplayTree
 {
-    public:  
+    public:
+    node *Root;
+    void initST()
+    {
+        Root = NULL;
+    }
     node *RR_ROTATE(node * Node1)
     {
         node *Node2 = Node1->lch;
@@ -94,7 +93,7 @@ class SplayTree
         strcpy(p_Node->id, id);
         if(!p_Node)
         {
-            printf("\nOut of memory!\n");
+            perror("\nOut of memory!\n");
             exit(1);
         }
         p_Node->lch = p_Node->rch = NULL;
@@ -187,11 +186,24 @@ class SplayTree
         }
         return;
     }
+    void cutTree(node *root)
+    {
+        if(root->lch != NULL)
+            cutTree(root->lch);
+        if(root->rch != NULL)
+            cutTree(root->rch);
+        delete(root);
+    }
+    ~SplayTree()
+    {
+        if(Root != NULL)
+            cutTree(Root);
+    }
 };
 
-void nodesFromFile(SplayTree *st, node **p_root, char *rFlName);
+void nodesFromFile(SplayTree *st, char *rFlName);
 
-void workWithTree(SplayTree *st, node **p_root);
+void workWithTree(SplayTree *st);
 
 bool ifServWord(char *word);
 
@@ -201,23 +213,20 @@ int main()
 {
     printf("_____________________________________________________________________________________________\n");
     SplayTree * st = new SplayTree;
-    node * root = new node;
-    root = NULL;
+    st->initST();
     char inpFl[] = "splay/input.cpp";
     char newFl[] = "splay/input_without_comments.cpp";
     
     clearFile(inpFl, newFl);
-    nodesFromFile(st, &root, newFl);
-    workWithTree(st, &root);
-
-    delete(root);
+    nodesFromFile(st, newFl);
+    workWithTree(st);
+    st->~SplayTree();
     delete(st);
     return 0;
 }
 
-void nodesFromFile(SplayTree *st, node **p_root, char *rFlName)
+void nodesFromFile(SplayTree *st, char *rFlName)
 {
-    node * root = *p_root;
     FILE *rFl = fopen(rFlName, "r");
     char prev, last;
     bool ifQuotes = false;
@@ -264,25 +273,23 @@ void nodesFromFile(SplayTree *st, node **p_root, char *rFlName)
                 }
                 else if(!ifServWord(tWord))
                 {
-                    root = (*st).Insert(tWord, root);
+                    st->Root = (*st).Insert(tWord, st->Root);
                     cout << "\nAfter Insert: " << tWord << endl;
-                    (*st).InOrder(root);
+                    (*st).InOrder(st->Root);
                 }
             }
         }
         prev = last;
         last = getc(rFl);    
     }
-    *p_root = root;
     fclose(rFl);
     return;
 }
 
-void workWithTree(SplayTree *st, node **p_root)
+void workWithTree(SplayTree *st)
 {
-    node * root = *p_root;
     printf("_____________________________________________________________________________________________\n");
-    (*st).InOrder(root);
+    (*st).InOrder(st->Root);
     int c = 5;
     char id[256];
     
@@ -308,16 +315,16 @@ void workWithTree(SplayTree *st, node **p_root)
         case 1:
             cout << "Enter value to be deleted: ";
             scanf("%s", id);
-            root = (*st).Delete(id, root);
+            st->Root = (*st).Delete(id, st->Root);
             cout << "\nAfter Delete: " << id << endl;
-            (*st).InOrder(root);
+            (*st).InOrder(st->Root);
             break;
         case 2:
             cout << "Enter value to be searched: ";
             scanf("%s", id);
-            root = (*st).Search(id, root);
+            st->Root = (*st).Search(id, st->Root);
             cout << "\nAfter Search " << id << endl;
-            (*st).InOrder(root);
+            (*st).InOrder(st->Root);
             break;
         case 3:
             break;
