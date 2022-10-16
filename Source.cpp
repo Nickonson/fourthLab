@@ -220,8 +220,6 @@ int main()
     clearFile(inpFl, newFl);
     nodesFromFile(st, newFl);
     workWithTree(st);
-    st->~SplayTree();
-    delete(st);
     return 0;
 }
 
@@ -327,6 +325,7 @@ void workWithTree(SplayTree *st)
             (*st).InOrder(st->Root);
             break;
         case 3:
+            delete(st);
             break;
         default:
             cout << "\nInvalid type!\n";
